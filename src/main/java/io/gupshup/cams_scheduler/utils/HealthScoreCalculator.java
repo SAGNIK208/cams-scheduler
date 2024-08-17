@@ -9,8 +9,8 @@ public class HealthScoreCalculator {
 
     public static double calculateHealthScore(double downtimeInSeconds,
                                               double totalRequestDuration,
-                                              int failedRequestsPastDay,
-                                              int totalRequestsPastDay,
+                                              long failedRequestsPastDay,
+                                              long totalRequestsPastDay,
                                               Double existingHealthScore) {
 
         double downtimeImpact = calculateDowntimeImpact(downtimeInSeconds, totalRequestDuration);
@@ -33,7 +33,7 @@ public class HealthScoreCalculator {
         return downtimeInSeconds / totalRequestDuration;
     }
 
-    private static double calculateHistoricalSuccessRate(int failedRequests, int totalRequests) {
+    private static double calculateHistoricalSuccessRate(long failedRequests, long totalRequests) {
         if (totalRequests == 0) {
             return 1.0;
         }

@@ -13,11 +13,11 @@ import java.util.List;
 public interface WebhookEventsRepository extends JpaRepository<WebhookEvents, WebhookEvents.WebhookEventsId> {
     List<WebhookEvents> findAllByWebhookId(String webhookId);
     List<WebhookEvents> findAllByTimestampBetween(OffsetDateTime start, OffsetDateTime end);
-    @Query("SELECT COUNT(*) FROM webhook_events WHERE webhook_id = :webhookId AND timestamp BETWEEN :startTime AND :endTime AND is_success = false")
-    int countFailedRequestsPastDay(@Param("webhookId") String webhookId, @Param("startTime") OffsetDateTime startTime, @Param("endTime") OffsetDateTime endTime);
+    @Query("SELECT COUNT(e) FROM WebhookEvents e WHERE e.webhookId = :webhookId AND e.requestTime BETWEEN :startDate AND :endDate")
+    long countFailedRequestsPastDay(@Param("webhookId") String webhookId, @Param("startDate") OffsetDateTime startDate, @Param("endDate") OffsetDateTime endDate);
 
-    @Query("SELECT COUNT(*) FROM webhook_events WHERE webhook_id = :webhookId AND timestamp BETWEEN :startTime AND :endTime")
-    int countTotalRequestsPastDay(@Param("webhookId") String webhookId, @Param("startTime") OffsetDateTime startTime, @Param("endTime") OffsetDateTime endTime);
+    @Query("SELECT COUNT(e) FROM WebhookEvents e WHERE e.webhookId = :webhookId AND e.requestTime BETWEEN :startDate AND :endDate")
+    long countTotalRequestsPastDay(@Param("webhookId") String webhookId, @Param("startDate") OffsetDateTime startDate, @Param("endDate") OffsetDateTime endDate);
 
     @Query("SELECT e FROM WebhookEvents e WHERE e.webhookId = :webhookId AND e.timestamp > :lastAggregationTime")
     List<WebhookEvents> findAllByWebhookIdAndTimestampAfter(@Param("webhookId") String webhookId, @Param("lastAggregationTime") OffsetDateTime lastAggregationTime);

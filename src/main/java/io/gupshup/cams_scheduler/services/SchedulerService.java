@@ -1,5 +1,6 @@
 package io.gupshup.cams_scheduler.services;
 
+import io.gupshup.cams_scheduler.config.ZooKeeperConfig;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,14 +13,14 @@ import java.util.concurrent.TimeUnit;
 public class SchedulerService {
 
     @Autowired
-    private ZooKeeperService zooKeeperService;
+    private ZooKeeperConfig zooKeeperConfig;
 
     @Autowired
     private AggregationService aggregationService;
 
     private ScheduledExecutorService scheduler;
     private int aggregationIntervalMinutes = 5; // Default value
-    private boolean isRunning = true; // Default value
+    private boolean isRunning = false; // Default value
     private int numberOfThreads = 1; // Default value
 
     @PostConstruct
@@ -38,9 +39,9 @@ public class SchedulerService {
 
     public void updateConfiguration() {
         try {
-            int newInterval = zooKeeperService.getAggregationIntervalMinutes();
-            boolean newRunningStatus = zooKeeperService.isSchedulerRunning();
-            int newThreadCount = zooKeeperService.getNumberOfThreads();
+            int newInterval = zooKeeperConfig.getAggregationIntervalMinutes();
+            boolean newRunningStatus = zooKeeperConfig.isSchedulerRunning();
+            int newThreadCount = zooKeeperConfig.getNumberOfThreads();
 
             if (newInterval != aggregationIntervalMinutes || newRunningStatus != isRunning || newThreadCount != numberOfThreads) {
                 aggregationIntervalMinutes = newInterval;

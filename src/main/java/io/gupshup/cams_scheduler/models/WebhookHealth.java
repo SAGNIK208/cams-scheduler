@@ -25,7 +25,7 @@ public class WebhookHealth {
     @Column(name = "date", nullable = false)
     private LocalDate date;
 
-    @Column(name = "downtime", precision = 10, scale = 2)
+    @Column(name = "downtime", precision = 10)
     private Double downtime;
 
     // Composite Key Class

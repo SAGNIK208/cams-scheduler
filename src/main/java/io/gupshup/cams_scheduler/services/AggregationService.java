@@ -1,5 +1,6 @@
 package io.gupshup.cams_scheduler.services;
 
+import io.gupshup.cams_scheduler.config.ZooKeeperConfig;
 import io.gupshup.cams_scheduler.models.WebhookAnalytics;
 import io.gupshup.cams_scheduler.models.WebhookEvents;
 import io.gupshup.cams_scheduler.repositories.WebhookAnalyticsRepository;
@@ -28,7 +29,7 @@ public class AggregationService {
     private WebhookAnalyticsRepository webhookAnalyticsRepository;
 
     @Autowired
-    private ZooKeeperService zooKeeperService;
+    private ZooKeeperConfig zooKeeperConfig;
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(10); // Number of threads for parallel processing
 
@@ -41,7 +42,7 @@ public class AggregationService {
             OffsetDateTime lastAggregationTime = analytics.getLastAggregationTimestamp();
             if (lastAggregationTime == null) {
                 try {
-                    lastAggregationTime = OffsetDateTime.now().minusMinutes(zooKeeperService.getAggregationIntervalMinutes()); // Default interval, update based on dynamic config if needed
+                    lastAggregationTime = OffsetDateTime.now().minusMinutes(zooKeeperConfig.getAggregationIntervalMinutes()); // Default interval, update based on dynamic config if needed
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -121,8 +122,8 @@ public class AggregationService {
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime startOfDay = now.minusDays(1).toLocalDate().atStartOfDay(now.getOffset()).toOffsetDateTime();
 
-        int failedRequestsPastDay = webhookEventsRepository.countFailedRequestsPastDay(webhookId, startOfDay, now);
-        int totalRequestsPastDay = webhookEventsRepository.countTotalRequestsPastDay(webhookId, startOfDay, now);
+        long failedRequestsPastDay = webhookEventsRepository.countFailedRequestsPastDay(webhookId, startOfDay, now);
+        long totalRequestsPastDay = webhookEventsRepository.countTotalRequestsPastDay(webhookId, startOfDay, now);
 
         return HealthScoreCalculator.calculateHealthScore(
                 downtimeInSeconds, 86400, // 24 hours in seconds

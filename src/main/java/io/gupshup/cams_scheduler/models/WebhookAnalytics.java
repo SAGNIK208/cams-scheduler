@@ -19,19 +19,19 @@ public class WebhookAnalytics {
     @Column(name = "webhook_id", nullable = false)
     private String webhookId;
 
-    @Column(name = "success_rate", precision = 5, scale = 2)
+    @Column(name = "success_rate", precision = 5)
     private Double successRate;
 
-    @Column(name = "avg_latency", precision = 10, scale = 3)
+    @Column(name = "avg_latency", precision = 10)
     private Double avgLatency;
 
-    @Column(name = "retry_rate", precision = 5, scale = 2)
+    @Column(name = "retry_rate", precision = 5)
     private Double retryRate;
 
     @Column(name = "total_events")
     private Integer totalEvents;
 
-    @Column(name = "health", precision = 6, scale = 3)
+    @Column(name = "health", precision = 6)
     private Double health;
 
     @Column(name = "last_aggregation_time")
