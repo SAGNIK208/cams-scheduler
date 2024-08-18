@@ -29,12 +29,12 @@ public class SchedulerService {
     }
 
     private void startDynamicScheduler() {
-        scheduler = Executors.newScheduledThreadPool(numberOfThreads);
+        scheduler = Executors.newScheduledThreadPool(zooKeeperConfig.getNumberOfThreads());
         scheduler.scheduleAtFixedRate(() -> {
-            if (isRunning) {
+            if (zooKeeperConfig.isSchedulerRunning()) {
                 aggregationService.aggregate();
             }
-        }, 0, aggregationIntervalMinutes, TimeUnit.MINUTES);
+        }, 0, zooKeeperConfig.getAggregationIntervalMinutes(), TimeUnit.MINUTES);
     }
 
     public void updateConfiguration() {

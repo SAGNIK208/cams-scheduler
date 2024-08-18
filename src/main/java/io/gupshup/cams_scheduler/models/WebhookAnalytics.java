@@ -7,6 +7,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -35,5 +36,5 @@ public class WebhookAnalytics {
     private Double health;
 
     @Column(name = "last_aggregation_time")
-    private OffsetDateTime lastAggregationTimestamp;
+    private Timestamp lastAggregationTimestamp;
 }

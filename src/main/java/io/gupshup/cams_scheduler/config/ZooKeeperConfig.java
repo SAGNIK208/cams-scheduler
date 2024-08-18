@@ -17,12 +17,25 @@ public class ZooKeeperConfig implements Watcher {
     private final ZooKeeper zooKeeper;
     private final String zkConnectionString;
     private static final String CONFIG_PATH = "/cams/config";
+    private JSONObject configJson = new JSONObject();
 
     private ZooKeeperConfig(@Value("${zookeeper.connection.string}") String zkConnectionString) throws Exception {
         this.zkConnectionString = zkConnectionString;
         CountDownLatch connectedSignal = new CountDownLatch(1);
-        this.zooKeeper = new ZooKeeper(zkConnectionString, 3000, this);
+        this.zooKeeper = new ZooKeeper(zkConnectionString, 30000000, this);
         connectedSignal.await(3, TimeUnit.SECONDS);
+        loadConfig();
+        setupWatchers();
+    }
+
+    private void loadConfig() throws KeeperException, InterruptedException {
+        try {
+            byte[] data = zooKeeper.getData(CONFIG_PATH, this, null);
+            this.configJson = new JSONObject(new String(data, StandardCharsets.UTF_8));
+            System.out.println("Configuration loaded: " + this.configJson.toString());
+        } catch (Exception e) {
+            System.err.println("Failed to fetch configuration: " + e.getMessage());
+        }
     }
 
     public static synchronized ZooKeeperConfig getInstance(String zkConnectionString) throws Exception {
@@ -40,6 +53,7 @@ public class ZooKeeperConfig implements Watcher {
     public void process(WatchedEvent event) {
         try {
             if (event.getType() == Event.EventType.NodeDataChanged) {
+                loadConfig();
                 setupWatchers(); // Re-register watchers
                 System.out.println("Configuration changed. Path: " + event.getPath());
             }
@@ -49,8 +63,7 @@ public class ZooKeeperConfig implements Watcher {
     }
 
     public String getConfigValue() throws Exception {
-        byte[] data = zooKeeper.getData(CONFIG_PATH, false, null);
-        return new String(data, StandardCharsets.UTF_8);
+       return configJson.toString();
     }
 
     public void setConfigValue(String jsonData) throws Exception {
@@ -67,18 +80,15 @@ public class ZooKeeperConfig implements Watcher {
         return new JSONObject(configJsonStr);
     }
 
-    public int getAggregationIntervalMinutes() throws Exception {
-        JSONObject configJson = getConfigJson();
-        return configJson.getInt("aggregationIntervalMinutes");
+    public int getAggregationIntervalMinutes() {
+        return this.configJson.optInt("aggregationIntervalMinutes", 5); // Default to 5 if not found
     }
 
-    public boolean isSchedulerRunning() throws Exception {
-        JSONObject configJson = getConfigJson();
-        return configJson.getBoolean("isRunning");
+    public boolean isSchedulerRunning() {
+        return this.configJson.optBoolean("isRunning", false); // Default to false if not found
     }
 
-    public int getNumberOfThreads() throws Exception {
-        JSONObject configJson = getConfigJson();
-        return configJson.getInt("numberOfThreads");
+    public int getNumberOfThreads() {
+        return this.configJson.optInt("numberOfThreads", 3); // Default to 3 if not found
     }
 }

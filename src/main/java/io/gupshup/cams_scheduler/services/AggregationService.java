@@ -11,7 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -39,10 +42,13 @@ public class AggregationService {
 
         analyticsList.forEach(analytics -> executorService.submit(() -> {
             String webhookId = analytics.getWebhookId();
-            OffsetDateTime lastAggregationTime = analytics.getLastAggregationTimestamp();
+            Timestamp lastAggregationTime = analytics.getLastAggregationTimestamp();
             if (lastAggregationTime == null) {
                 try {
-                    lastAggregationTime = OffsetDateTime.now().minusMinutes(zooKeeperConfig.getAggregationIntervalMinutes()); // Default interval, update based on dynamic config if needed
+                    // Default interval, update based on dynamic config if needed
+                    lastAggregationTime = Timestamp.valueOf(
+                            LocalDateTime.now(ZoneOffset.UTC)
+                                    .minusMinutes(zooKeeperConfig.getAggregationIntervalMinutes()));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -50,7 +56,7 @@ public class AggregationService {
 
             List<WebhookEvents> events = webhookEventsRepository.findAllByWebhookIdAndTimestampAfter(webhookId, lastAggregationTime);
             WebhookAnalytics updatedAnalytics = updateAggregates(analytics, events);
-            updatedAnalytics.setLastAggregationTimestamp(OffsetDateTime.now());
+            updatedAnalytics.setLastAggregationTimestamp(Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
             webhookAnalyticsRepository.save(updatedAnalytics);
         }));
     }
@@ -70,7 +76,7 @@ public class AggregationService {
 
             // Perform aggregation on all events
             updateAggregates(updatedAnalytics, allEvents);
-            updatedAnalytics.setLastAggregationTimestamp(OffsetDateTime.now());
+            updatedAnalytics.setLastAggregationTimestamp(Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
             webhookAnalyticsRepository.save(updatedAnalytics);
         }));
     }
@@ -122,8 +128,8 @@ public class AggregationService {
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime startOfDay = now.minusDays(1).toLocalDate().atStartOfDay(now.getOffset()).toOffsetDateTime();
 
-        long failedRequestsPastDay = webhookEventsRepository.countFailedRequestsPastDay(webhookId, startOfDay, now);
-        long totalRequestsPastDay = webhookEventsRepository.countTotalRequestsPastDay(webhookId, startOfDay, now);
+        long failedRequestsPastDay = webhookEventsRepository.countFailedRequestsPastDay(webhookId, Timestamp.from(startOfDay.toInstant()), Timestamp.from(now.toInstant()));
+        long totalRequestsPastDay = webhookEventsRepository.countTotalRequestsPastDay(webhookId, Timestamp.from(startOfDay.toInstant()), Timestamp.from(now.toInstant()));
 
         return HealthScoreCalculator.calculateHealthScore(
                 downtimeInSeconds, 86400, // 24 hours in seconds

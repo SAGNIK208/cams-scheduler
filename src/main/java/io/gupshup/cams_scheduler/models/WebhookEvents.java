@@ -1,14 +1,12 @@
 package io.gupshup.cams_scheduler.models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import io.hypersistence.utils.hibernate.type.interval.PostgreSQLIntervalType;
+
 import java.io.Serializable;
-import java.time.OffsetDateTime;
+import java.sql.Timestamp;
 import java.time.Duration;
 
 @Entity
@@ -24,7 +22,7 @@ public class WebhookEvents {
 
     @Id
     @Column(name = "timestamp", nullable = false)
-    private OffsetDateTime timestamp;
+    private Timestamp timestamp;
 
     @Column(name = "webhook_id", nullable = false)
     private String webhookId;
@@ -35,7 +33,8 @@ public class WebhookEvents {
     @Column(name = "response_time", nullable = false)
     private Duration responseTime;
 
-    @Column(name = "latency", nullable = false)
+    @Convert(converter = PostgreSQLIntervalType.class,attributeName = "latency")
+    @Column(name = "latency", nullable = false,columnDefinition = "interval")
     private Duration latency;
 
     @Column(name = "retry_count", nullable = false)
@@ -58,7 +57,7 @@ public class WebhookEvents {
     @NoArgsConstructor
     public static class WebhookEventsId implements Serializable {
         private String id;
-        private OffsetDateTime timestamp;
+        private Timestamp timestamp;
     }
 }
 

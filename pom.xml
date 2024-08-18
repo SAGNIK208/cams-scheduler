@@ -49,7 +49,12 @@
 			<artifactId>json</artifactId>
 			<version>20230227</version>
 		</dependency>
-
+		<!-- https://mvnrepository.com/artifact/io.hypersistence/hypersistence-utils-hibernate-62 -->
+		<dependency>
+			<groupId>io.hypersistence</groupId>
+			<artifactId>hypersistence-utils-hibernate-63</artifactId>
+			<version>3.8.1</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.postgresql</groupId>
