@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.sql.Timestamp;
-import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "webhook_analytics")
@@ -26,8 +25,8 @@ public class WebhookAnalytics {
     @Column(name = "avg_latency", precision = 10)
     private Double avgLatency;
 
-    @Column(name = "retry_rate", precision = 5)
-    private Double retryRate;
+    @Column(name = "retry_count")
+    private Integer retryCount;
 
     @Column(name = "total_events")
     private Integer totalEvents;

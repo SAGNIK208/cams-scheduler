@@ -34,7 +34,7 @@ public class AggregationService {
     @Autowired
     private ZooKeeperConfig zooKeeperConfig;
 
-    private final ExecutorService executorService = Executors.newFixedThreadPool(10); // Number of threads for parallel processing
+    private final ExecutorService executorService = Executors.newFixedThreadPool(1); // Number of threads for parallel processing
 
     @Transactional
     public void aggregate() {
@@ -45,10 +45,9 @@ public class AggregationService {
             Timestamp lastAggregationTime = analytics.getLastAggregationTimestamp();
             if (lastAggregationTime == null) {
                 try {
-                    // Default interval, update based on dynamic config if needed
                     lastAggregationTime = Timestamp.valueOf(
                             LocalDateTime.now(ZoneOffset.UTC)
-                                    .minusMinutes(zooKeeperConfig.getAggregationIntervalMinutes()));
+                                    .minusDays(31));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -87,7 +86,7 @@ public class AggregationService {
         resetAnalytics.setWebhookId(analytics.getWebhookId());
         resetAnalytics.setSuccessRate(0.0);
         resetAnalytics.setAvgLatency(0.0);
-        resetAnalytics.setRetryRate(0.0);
+        resetAnalytics.setRetryCount(0);
         resetAnalytics.setTotalEvents(0);
         resetAnalytics.setHealth(calculateHealthScore(analytics.getWebhookId()));
         return resetAnalytics;
@@ -97,7 +96,7 @@ public class AggregationService {
         double totalLatency = existingAnalytics.getAvgLatency() * existingAnalytics.getTotalEvents();
         int successfulRequests = (int) (existingAnalytics.getSuccessRate() / 100 * existingAnalytics.getTotalEvents());
         int totalRequests = existingAnalytics.getTotalEvents();
-        int retryCount = (int) (existingAnalytics.getRetryRate() / 100 * totalRequests);
+        int retryCount = existingAnalytics.getRetryCount();
 
         for (WebhookEvents event : newEvents) {
             if (event.getIsSuccess()) {
@@ -110,11 +109,10 @@ public class AggregationService {
 
         double successRate = totalRequests == 0 ? 0 : (double) successfulRequests / totalRequests * 100;
         double avgLatency = totalRequests == 0 ? 0 : totalLatency / totalRequests;
-        double retryRate = totalRequests == 0 ? 0 : (double) retryCount / totalRequests * 100;
 
         existingAnalytics.setSuccessRate(successRate);
         existingAnalytics.setAvgLatency(avgLatency);
-        existingAnalytics.setRetryRate(retryRate);
+        existingAnalytics.setRetryCount(retryCount);
         existingAnalytics.setTotalEvents(totalRequests);
         existingAnalytics.setHealth(calculateHealthScore(existingAnalytics.getWebhookId()));
 
@@ -132,9 +130,9 @@ public class AggregationService {
         long totalRequestsPastDay = webhookEventsRepository.countTotalRequestsPastDay(webhookId, Timestamp.from(startOfDay.toInstant()), Timestamp.from(now.toInstant()));
 
         return HealthScoreCalculator.calculateHealthScore(
-                downtimeInSeconds, 86400, // 24 hours in seconds
+                webhookAnalyticsRepository.findHealthScoreByWebhookId(webhookId),
                 failedRequestsPastDay, totalRequestsPastDay,
-                webhookAnalyticsRepository.findHealthScoreByWebhookId(webhookId)
+                downtimeInSeconds, LocalDateTime.now(ZoneOffset.UTC).toLocalTime().toSecondOfDay()
         );
     }
 }

@@ -1,61 +1,51 @@
 package io.gupshup.cams_scheduler.utils;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 public class HealthScoreCalculator {
 
-    private static final double DOWNTIME_WEIGHT = 0.5;
-    private static final double HISTORICAL_WEIGHT = 0.5;
-    private static final double FINAL_WEIGHT = 0.5;
-    private static final int ROUNDING_MULTIPLE = 5;
+    // Define weightages for each parameter
+    private static final double WEIGHTAGE_EXISTING_SCORE = 0.4;
+    private static final double WEIGHTAGE_DOWNTIME_PERCENTAGE = 0.3;
+    private static final double WEIGHTAGE_FAILURE_RATE = 0.3;
 
-    public static double calculateHealthScore(double downtimeInSeconds,
-                                              double totalRequestDuration,
-                                              long failedRequestsPastDay,
-                                              long totalRequestsPastDay,
-                                              Double existingHealthScore) {
+    public static double calculateHealthScore(double existingScore, long failedRequests, long totalRequests, double downtime, double totalTime) {
+        try{
+            if (totalRequests < 0 || totalTime < 0 || existingScore < 0 || existingScore > 100) {
+                throw new IllegalArgumentException("Invalid input values.");
+            }
 
-        double downtimeImpact = calculateDowntimeImpact(downtimeInSeconds, totalRequestDuration);
-        double historicalSuccessRate = calculateHistoricalSuccessRate(failedRequestsPastDay, totalRequestsPastDay);
+            if(totalRequests == 0 || totalTime == 0){
+                return existingScore;
+            }
 
-        double newHealthScore = (DOWNTIME_WEIGHT * (1 - downtimeImpact)) + (HISTORICAL_WEIGHT * historicalSuccessRate);
+            double failureRate = (double) failedRequests / totalRequests;
+            double downtimePercentage = downtime / totalTime;
 
-        if (existingHealthScore != null) {
-            newHealthScore = (FINAL_WEIGHT * newHealthScore) + ((1 - FINAL_WEIGHT) * existingHealthScore);
+            double normalizedFailureRate = Math.max(0, Math.min(100, 100 * (1 - failureRate))); // Lower failure rate is better
+            double normalizedDowntimePercentage = Math.max(0, Math.min(100, 100 * (1 - downtimePercentage))); // Lower downtime is better
+
+            double healthScore = (WEIGHTAGE_EXISTING_SCORE * existingScore +
+                    WEIGHTAGE_FAILURE_RATE * normalizedFailureRate +
+                    WEIGHTAGE_DOWNTIME_PERCENTAGE * normalizedDowntimePercentage);
+
+            return Math.max(0, Math.min(100, healthScore));
+        } catch (Exception e) {
+            return existingScore;
         }
-
-        double scaledScore = newHealthScore * 100;
-        return roundToNearestMultipleOf5(scaledScore);
-    }
-
-    private static double calculateDowntimeImpact(double downtimeInSeconds, double totalRequestDuration) {
-        if (totalRequestDuration == 0) {
-            return 0.0;
-        }
-        return downtimeInSeconds / totalRequestDuration;
-    }
-
-    private static double calculateHistoricalSuccessRate(long failedRequests, long totalRequests) {
-        if (totalRequests == 0) {
-            return 1.0;
-        }
-        return (double) (totalRequests - failedRequests) / totalRequests;
-    }
-
-    private static double roundToNearestMultipleOf5(double score) {
-        return Math.round(score / ROUNDING_MULTIPLE) * ROUNDING_MULTIPLE;
     }
 
     public static void main(String[] args) {
-        // Example usage
-        double downtimeInSeconds = 300;
-        double totalRequestDuration = 86400; // 24 hours in seconds
-        int failedRequestsPastDay = 50;
-        int totalRequestsPastDay = 1000;
-        Double existingHealthScore = 0.85;
 
-        double healthScore = calculateHealthScore(downtimeInSeconds, totalRequestDuration,
-                failedRequestsPastDay, totalRequestsPastDay,
-                existingHealthScore);
-
-        System.out.printf("Health Score: %.2f%n", healthScore);
+        // Example inputs
+        double existingScore = 0.0;
+        int failedRequests = 0;
+        int totalRequests = 100;
+        double downtime = 2.0;
+        double totalTime = 24.0;
+        System.out.println(LocalDateTime.now(ZoneOffset.UTC).toLocalTime());
+        double healthScore = calculateHealthScore(existingScore, failedRequests, totalRequests, downtime, totalTime);
+        System.out.println("Computed Health Score: " + healthScore);
     }
 }
