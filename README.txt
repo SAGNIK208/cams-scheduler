@@ -90,3 +90,46 @@ CREATE TABLE webhook_analytics (
   total_events INT,
   health NUMERIC(6,3) -- Health score, e.g., 0.000 to 999.999
 );
+
+CREATE TABLE business (
+    business_id UUID PRIMARY KEY.
+    name VARCHAR(255),
+    contact_no VARCHAR(15),
+    email VARCHAR(255) NOT NULL,
+    api_key VARCHAR(255)
+);
+CREATE TABLE webhook_details (
+    webhook_id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
+    webhook_url TEXT,
+    config JSONB,
+    source VARCHAR(255),
+    phone VARCHAR(15),
+    email VARCHAR(255) NOT NULL,
+    business_id TEXT
+);
+INSERT INTO webhook_analytics (webhook_id)
+VALUES 
+    ('webhook_1'),
+    ('webhook_2'),
+    ('webhook_3');
+ALTER TABLE webhook_analytics
+RENAME COLUMN retry_rate TO retry_count;
+
+ALTER TABLE webhook_analytics
+ALTER COLUMN retry_count TYPE INT USING retry_count::INT;
+ALTER TABLE webhook_analytics
+ALTER COLUMN success_rate SET DEFAULT 0;
+
+ALTER TABLE webhook_analytics
+ALTER COLUMN avg_latency SET DEFAULT 0;
+
+ALTER TABLE webhook_analytics
+ALTER COLUMN retry_rate SET DEFAULT 0;
+
+ALTER TABLE webhook_analytics
+ALTER COLUMN total_events SET DEFAULT 0;
+
+ALTER TABLE webhook_analytics
+ALTER COLUMN health SET DEFAULT 100;
+
+
